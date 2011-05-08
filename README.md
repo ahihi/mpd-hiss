@@ -10,3 +10,7 @@ Growl notifier for MPD (Music Player Daemon) written in Python.
 - [Python](http://python.org/) (only tested on 2.7)
 - [Python support for Growl](http://growl.info/documentation/developer/python-support.php)
 - [python-mpd](http://pypi.python.org/pypi/python-mpd/)
+
+## License
+
+Both the code and accompanying icon are in the public domain.
