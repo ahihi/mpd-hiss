@@ -19,7 +19,7 @@ def msg(text):
 def disconnect(client):
     try:
         client.disconnect()
-    except ConnectionError:
+    except mpd.ConnectionError:
         pass
 
 class AuthError(Exception):
