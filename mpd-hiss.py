@@ -16,6 +16,13 @@ def msg(text):
     timestamp = dt.strftime("[%Y-%m-%d %H:%M:%S] ")
     print timestamp + text
 
+def hms(seconds):
+    h, m, s = seconds / 3600, seconds % 3600 / 60, seconds % 60
+    result = "{:02d}:{:02d}".format(m, s)
+    if h > 0:
+        result = "{:02d}:".format(h) + result
+    return result
+
 def disconnect(client):
     try:
         client.disconnect()
@@ -36,7 +43,7 @@ parser = argparse.ArgumentParser(
     formatter_class = argparse.RawTextHelpFormatter,
     epilog = "\n".join((
         "Format string syntax: http://docs.python.org/library/string.html#format-string-syntax",
-        "Available fields as of MPD 0.16.2: album artist track title pos last-modified file time date genre id"   
+        "Available fields: artist, title, album, duration"   
     ))
 )
 parser.add_argument(
@@ -124,11 +131,17 @@ try:
                 status = client.status()
                 if status["state"] == "play":
                     song = client.currentsong()
-                    msg("Sending Now Playing notification for %s - [%s] %s." % (song["artist"], song["album"], song["title"]))
+                    song_data = {
+                        "artist": song.get("artist", "Unknown artist"),
+                        "title": song.get("title", "Unknown track"),
+                        "album": song.get("album", ""),
+                        "duration": hms(int(song.get("time", 0)))
+                    }
+                    msg("Sending Now Playing notification for {artist} - [{album}] {title}.".format(**song_data))
                     growler.notify(
                         noteType = "Now Playing",
-                        title = args.title_format.format(**song),
-                        description = args.description_format.format(**song),
+                        title = args.title_format.format(**song_data),
+                        description = args.description_format.format(**song_data).rstrip("\n"),
                         icon = growl_icon
                     )
         except (mpd.ConnectionError, AuthError, socket.error), e:
