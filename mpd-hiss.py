@@ -124,12 +124,15 @@ try:
                     msg("Authenticated.")
                 except mpd.CommandError, e:
                     raise AuthError(e)
+            last_status = client.status()
             while True:
                 client.send_idle("player")
                 select((client,), (), ())
                 client.fetch_idle()
                 status = client.status()
-                if status["state"] == "play":
+                started_playing = last_status["state"] != "play" and status["state"] == "play"
+                track_changed = last_status["songid"] != status["songid"]
+                if started_playing or track_changed:
                     song = client.currentsong()
                     song_data = {
                         "artist": song.get("artist", "Unknown artist"),
@@ -144,6 +147,7 @@ try:
                         description = args.description_format.format(**song_data).rstrip("\n"),
                         icon = growl_icon
                     )
+                last_status = status
         except (mpd.ConnectionError, AuthError, socket.error), e:
             msg("Error: %s" % e)
             msg("Reconnecting in %d seconds..." % args.reconnect_interval)
