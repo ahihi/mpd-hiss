@@ -131,7 +131,9 @@ try:
                 client.fetch_idle()
                 status = client.status()
                 started_playing = last_status["state"] != "play" and status["state"] == "play"
-                track_changed = last_status["songid"] != status["songid"]
+                last_songid = last_status.get("songid", None)
+                songid = status.get("songid", None)
+                track_changed = songid not in (None, last_songid)
                 if started_playing or track_changed:
                     song = client.currentsong()
                     song_data = {
