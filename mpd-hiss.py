@@ -2,7 +2,7 @@
 import argparse
 from datetime import datetime
 import os
-from os.path import abspath, expanduser
+from os.path import abspath, basename, expanduser
 from select import select
 import socket
 import sys
@@ -22,6 +22,12 @@ def hms(seconds):
     if h > 0:
         result = "{:02d}:".format(h) + result
     return result
+
+def try_apply(f, x):
+    try:
+        return f(x)
+    except:
+        return x
 
 def disconnect(client):
     try:
@@ -138,7 +144,7 @@ try:
                     song = client.currentsong()
                     song_data = {
                         "artist": song.get("artist", "Unknown artist"),
-                        "title": song.get("title", "Unknown track"),
+                        "title": song.get("title") or try_apply(basename, song.get("file")) or "Unknown track",
                         "album": song.get("album", ""),
                         "duration": hms(int(song.get("time", 0)))
                     }
