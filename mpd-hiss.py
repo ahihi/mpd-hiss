@@ -14,7 +14,7 @@ import mpd
 def msg(text):
     dt = datetime.now()
     timestamp = dt.strftime("[%Y-%m-%d %H:%M:%S] ")
-    print timestamp + text
+    print >> sys.stderr, timestamp + text
 
 def hms(seconds):
     h, m, s = seconds / 3600, seconds % 3600 / 60, seconds % 60
