@@ -3,12 +3,12 @@ import argparse
 from datetime import datetime
 import os
 from os.path import abspath, basename, expanduser
+import platform
 from select import select
 import socket
 import sys
 import time
 
-import Growl
 import mpd
 
 def msg(text):
@@ -98,8 +98,19 @@ parser.add_argument(
 
 args = parser.parse_args()
 
+osx_version = platform.mac_ver()[0]
+legacy = osx_version != "" and osx_version < "10.7"
+if legacy:
+    import Growl as growl
+    load_image = growl.Image.imageFromPath
+else:
+    import gntp.notifier as growl
+    def load_image(path):
+        with open(path, "rb") as handle:
+            return handle.read()
+
 msg("Registering Growl notifier...")
-growler = Growl.GrowlNotifier(
+growler = growl.GrowlNotifier(
     applicationName = "mpd-hiss",
     notifications = ["Now Playing"]
 )
@@ -110,7 +121,7 @@ icon_path = abspath(expanduser(args.icon_path))
 
 try:
     msg("Loading icon from %s..." % icon_path)
-    growl_icon = Growl.Image.imageFromPath(icon_path)
+    growl_icon = load_image(icon_path)
     msg("Loaded.")
 except:
     msg("Failed to load icon, falling back to default.")
