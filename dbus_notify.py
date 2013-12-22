@@ -1,3 +1,4 @@
+from cgi import escape
 import dbus
 
 try:
@@ -11,23 +12,26 @@ INTERFACE = "org.freedesktop.Notifications"
 APP_NAME = "mpd-hiss"
 
 
-def load_image(image, experimental=False):
-    if Image is not None and experimental:
-        return experimental_load_image(image)
+def load_image(image, scale_icons):
+    if scale_icons:
+        if Image is None:
+            return ''
 
-    # The icon is too big!
-    return ''
+        return load_scaled_image(image)
 
+    return image
 
-SIZE = (64, 64)
+# Probably should be a commandline option
+SIZE = (128, 64)
 
-def experimental_load_image(image):
-    # Transparent icons are broken on awesome, or am I stupid?
+def load_scaled_image(image):
+    # I've opted to not support transparency here, because it's broken on
+    # (at least) awesome-wm  -- TODO
     im = Image.open(image)
     im.thumbnail(SIZE, Image.ANTIALIAS)
     raw = im.tobytes('raw', 'RGB')
-    stride = 4 * im.size[0]
-    alpha, bps, channels = 1, 24, 3
+    alpha, bps, channels = 0, 8, 3
+    stride = channels * im.size[0]
     return (im.size[0], im.size[1], stride, alpha, bps, channels,
             dbus.ByteArray(raw))
 
@@ -38,12 +42,15 @@ def notify(title, description, icon):
     time = 5000
 
     if icon:
+        # Not all notifiers support this
+        # Some require "icon" and an image on disk
         hint["icon_data"] = icon
 
     bus = dbus.SessionBus()
     notif = bus.get_object(ITEM, PATH)
     notify = dbus.Interface(notif, INTERFACE)
-    notify.Notify(APP_NAME, 1, '', title, description, actions, hint, time)
+    notify.Notify(APP_NAME, 1, '', title, escape(description), actions, hint,
+                  time)
 
 
 if __name__ == "__main__":

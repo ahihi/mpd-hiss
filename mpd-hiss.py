@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 import argparse
 import os
+import re
 import socket
 import sys
-from os.path import basename, abspath, expanduser
+from os.path import dirname, basename, abspath, expanduser
 from time import sleep
 
 import mpd
@@ -28,6 +29,21 @@ class AuthError(Exception):
     pass
 
 
+r_cover = re.compile(r'(album.?art|cover|front)\.(jpe?g|png)$', re.I)
+
+def album_art(previous, filename, scale_icons):
+    name = dirname(filename)
+
+    if name == previous[0]:
+        return previous
+
+    for cover in os.listdir(name):
+        if r_cover.search(cover):
+            msg('Album art: %s/%s' % (name, cover))
+            return name, load_image(os.path.join(name, cover), scale_icons)
+
+    return name, None
+
 def mpd_hiss(client, args):
     msg("Connecting to MPD...")
     client.connect(args.host, args.port)
@@ -42,6 +58,7 @@ def mpd_hiss(client, args):
             raise AuthError(e)
 
     last_status = client.status()
+    last_art = (None, None)
 
     while True:
         client.send_idle("player")
@@ -56,6 +73,14 @@ def mpd_hiss(client, args):
 
         if started_playing or track_changed:
             song = client.currentsong()
+
+            if args.album_art:
+                filename = os.path.join(args.album_art, song.get("file"))
+                last_art = album_art(last_art, filename, args.scale_icons)
+                icon = last_art[1] or growl_icon
+            else:
+                icon = growl_icon
+
             song_data = {
                 "artist": song.get("artist", "Unknown artist"),
                 "title": (song.get("title") or basename(song.get("file"))
@@ -68,7 +93,7 @@ def mpd_hiss(client, args):
             description = args.description_format.format(**song_data)
             notify(title=args.title_format.format(**song_data),
                    description=description.rstrip("\n"),
-                   icon=growl_icon)
+                   icon=icon)
             last_status = status
 
 
@@ -115,10 +140,15 @@ parser.add_argument("--icon",
                     dest="icon_path",
                     help="path to Growl notification icon",
                     default="./mpd-hiss.png")
-parser.add_argument("--experimental",
-                    dest="experimental",
+parser.add_argument("--album-art",
+                    dest="album_art",
+                    help="value of MPD's music_directory to load album art, "
+                         " when available",
+                    default="")
+parser.add_argument("--scale-icons",
+                    dest="scale_icons",
                     action="store_true",
-                    help="enable experimental features",
+                    help="scale icons; the notifier doesn't do it for us",
                     default=False)
 
 
@@ -129,7 +159,7 @@ if __name__ == '__main__':
 
     try:
         msg("Loading icon from %s..." % icon_path)
-        growl_icon = load_image(icon_path, args.experimental)
+        growl_icon = load_image(icon_path, args.scale_icons)
         msg("Loaded.")
     except:
         msg("Failed to load icon, falling back to default.")
@@ -144,7 +174,8 @@ if __name__ == '__main__':
             break
         except (mpd.ConnectionError, AuthError, socket.error) as e:
             msg("Error: %s" % e)
-            msg("Reconnecting in %d seconds..." % args.reconnect_interval)
-            sleep(args.reconnect_interval)
         finally:
             disconnect(client)
+
+        msg("Reconnecting in %d seconds..." % args.reconnect_interval)
+        sleep(args.reconnect_interval)
