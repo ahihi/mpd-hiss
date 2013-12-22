@@ -30,10 +30,14 @@ def load_scaled_image(image):
 
     # Transparent PNGs were broken without this?
     # Who knows why.
-    nt = Image.new("RGBA", im.size)
-    nt.paste(im, (0, 0), mask=im)
+    if im.mode == "RGBA":
+        fixed = Image.new("RGBA", im.size)
+        fixed.paste(im, (0, 0), mask=im)
+        im = fixed
+    else:
+        im = im.convert("RGBA")
 
-    raw = nt.tobytes("raw", "RGBA")
+    raw = im.tobytes("raw", "RGBA")
     alpha, bps, channels = 0, 8, 4
     stride = channels * im.size[0]
     return (im.size[0], im.size[1], stride, alpha, bps, channels,
