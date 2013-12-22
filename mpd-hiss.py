@@ -37,9 +37,15 @@ def album_art(previous, filename, scale_icons):
     if name == previous[0]:
         return previous
 
-    for cover in os.listdir(name):
+    try:
+        files = os.listdir(name)
+    except Exception as e:
+        msg("Failed to list %s: %s" % (name, e))
+        return name, None
+
+    for cover in files:
         if r_cover.search(cover):
-            msg('Album art: %s/%s' % (name, cover))
+            msg("Album art: %s/%s" % (name, cover))
             return name, load_image(os.path.join(name, cover), scale_icons)
 
     return name, None
