@@ -14,7 +14,7 @@ import mpd
 def msg(text):
     dt = datetime.now()
     timestamp = dt.strftime("[%Y-%m-%d %H:%M:%S] ")
-    print >> sys.stderr, timestamp + text
+    sys.stderr.write(timestamp + text + '\n')
 
 def hms(seconds):
     h, m, s = seconds / 3600, seconds % 3600 / 60, seconds % 60
@@ -139,7 +139,7 @@ try:
                     msg("Authenticating...")
                     client.password(args.password)
                     msg("Authenticated.")
-                except mpd.CommandError, e:
+                except mpd.CommandError as e:
                     raise AuthError(e)
             last_status = client.status()
             while True:
@@ -167,11 +167,11 @@ try:
                         icon = growl_icon
                     )
                 last_status = status
-        except (mpd.ConnectionError, AuthError, socket.error), e:
+        except (mpd.ConnectionError, AuthError, socket.error) as e:
             msg("Error: %s" % e)
             msg("Reconnecting in %d seconds..." % args.reconnect_interval)
             time.sleep(args.reconnect_interval)
         finally:
             disconnect(client)
-except KeyboardInterrupt, e:
+except KeyboardInterrupt as e:
     pass
