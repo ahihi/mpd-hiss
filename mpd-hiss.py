@@ -136,11 +136,11 @@ parser.add_argument("--reconnect-interval",
                     default=30)
 parser.add_argument("--title-format",
                     dest="title_format",
-                    help="Notification title format",
+                    help="notification title format",
                     default="{title}")
 parser.add_argument("--description-format",
                     dest="description_format",
-                    help="Notification description format",
+                    help="notification description format",
                     default="{artist}\n{album}")
 parser.add_argument("--icon",
                     dest="icon_path",
@@ -154,7 +154,7 @@ parser.add_argument("--album-art",
 parser.add_argument("--scale-icons",
                     dest="scale_icons",
                     action="store_true",
-                    help="scale icons; the notifier doesn't do it for us",
+                    help="scale icons if the notifier doesn't do it for us",
                     default=False)
 
 
