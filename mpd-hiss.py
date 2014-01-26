@@ -136,15 +136,15 @@ parser.add_argument("--reconnect-interval",
                     default=30)
 parser.add_argument("--title-format",
                     dest="title_format",
-                    help="Growl notification title format",
+                    help="Notification title format",
                     default="{title}")
 parser.add_argument("--description-format",
                     dest="description_format",
-                    help="Growl notification description format",
+                    help="Notification description format",
                     default="{artist}\n{album}")
 parser.add_argument("--icon",
                     dest="icon_path",
-                    help="path to Growl notification icon",
+                    help="path to notification icon",
                     default="./mpd-hiss.png")
 parser.add_argument("--album-art",
                     dest="album_art",
