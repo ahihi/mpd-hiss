@@ -100,7 +100,7 @@ def mpd_hiss(client, args):
             notify(title=args.title_format.format(**song_data),
                    description=description.rstrip("\n"),
                    icon=icon)
-            last_status = status
+        last_status = status
 
 
 EPILOG = ("Format string syntax: "
