@@ -1,21 +1,28 @@
 #!/usr/bin/env python
 import argparse
+import logging
+import mpd
 import os
 import re
 import socket
 import sys
-from os.path import dirname, basename, abspath, expanduser
+from os.path import dirname, basename
 from time import sleep
 
-import mpd
-
-from utils import msg, hms
+from utils import hms, load_scaled_image, full_path
 
 
 if sys.platform == "darwin":
-    from growl_notify import notify, load_image
+    from growl_notify import notify, native_load_image
 else:
-    from dbus_notify import notify, load_image
+    from dbus_notify import notify, native_load_image
+
+
+def load_image(filename, scale):
+    if scale:
+        return load_scaled_image(filename)
+
+    return native_load_image(filename)
 
 
 def disconnect(client):
@@ -33,33 +40,35 @@ r_cover = re.compile(r'(album.?art|cover|front)\.(jpe?g|png)$', re.I)
 
 def album_art(previous, filename, scale_icons):
     name = dirname(filename)
+    logging.debug("Looking for album art in %r", name)
 
     if name == previous[0]:
         return previous
 
     try:
         files = os.listdir(name)
-    except Exception as e:
-        msg("Failed to list %s: %s" % (name, e))
+    except:
+        logging.exception("Failed to list %s", name)
         return name, None
 
     for cover in files:
         if r_cover.search(cover):
-            msg("Album art: %s/%s" % (name, cover))
+            logging.debug("Album art: %s/%s", name, cover)
             return name, load_image(os.path.join(name, cover), scale_icons)
 
     return name, None
 
+
 def mpd_hiss(client, args):
-    msg("Connecting to MPD...")
+    logging.info("Connecting to MPD...")
     client.connect(args.host, args.port)
-    msg("Connected.")
+    logging.debug("Connected.")
 
     if args.password is not None:
         try:
-            msg("Authenticating...")
+            logging.debug("Authenticating...")
             client.password(args.password)
-            msg("Authenticated.")
+            logging.debug("Authenticated.")
         except mpd.CommandError as e:
             raise AuthError(e)
 
@@ -94,7 +103,7 @@ def mpd_hiss(client, args):
                 "album": song.get("album", ""),
                 "duration": hms(int(song.get("time", 0)))
             }
-            msg("Sending Now Playing notification for "
+            logging.info("Sending Now Playing notification for "
                 "{artist} - [{album}] {title}.".format(**song_data))
             description = args.description_format.format(**song_data)
             notify(title=args.title_format.format(**song_data),
@@ -116,6 +125,11 @@ if env_host.find("@") >= 0:
 
 parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
                                  epilog=EPILOG)
+parser.add_argument("--debug",
+                    dest="debug",
+                    action="store_true",
+                    help="Enable debug logging",
+                    default=False)
 parser.add_argument("--host",
                     dest="host",
                     help="MPD host",
@@ -161,14 +175,20 @@ parser.add_argument("--scale-icons",
 if __name__ == '__main__':
     args = parser.parse_args()
 
-    icon_path = abspath(expanduser(args.icon_path))
+    if args.debug:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    if args.album_art:
+        args.album_art = full_path(args.album_art)
+
+    icon_path = full_path(args.icon_path)
 
     try:
-        msg("Loading icon from %s..." % icon_path)
+        logging.info("Loading icon from %s...", icon_path)
         growl_icon = load_image(icon_path, args.scale_icons)
-        msg("Loaded.")
+        logging.debug("Icon loaded.")
     except:
-        msg("Failed to load icon, falling back to default.")
+        logging.exception("Failed to load icon, falling back to default.")
         growl_icon = None
 
     client = mpd.MPDClient()
@@ -179,9 +199,9 @@ if __name__ == '__main__':
         except KeyboardInterrupt as e:
             break
         except (mpd.ConnectionError, AuthError, socket.error) as e:
-            msg("Error: %s" % e)
+            logging.exception("Connection error")
         finally:
             disconnect(client)
 
-        msg("Reconnecting in %d seconds..." % args.reconnect_interval)
+        logging.info("Reconnecting in %d seconds...", args.reconnect_interval)
         sleep(args.reconnect_interval)
