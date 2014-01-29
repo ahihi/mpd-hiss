@@ -38,25 +38,47 @@ class AuthError(Exception):
 
 r_cover = re.compile(r'(album.?art|cover|front)\.(jpe?g|png)$', re.I)
 
-def album_art(previous, filename, scale_icons):
-    name = dirname(filename)
+
+def get_album_dir(filename, mpd_dir):
+    if filename.startswith('/'):
+        return dirname(filename)
+
+    elif mpd_dir:
+        return dirname(os.path.join(mpd_dir, filename))
+
+    return None
+
+
+def album_art(cache, name, scale):
+    # If a file was added with an absolute filenames, it will start
+    # with / -- we shouldn't have to add our album art path
+    # (This conflicts with --album-art being an option, since it might
+    #  now show album art even without the MPD music dir being set)
+    if name is None:
+        return cache['default']
+
     logging.debug("Looking for album art in %r", name)
 
-    if name == previous[0]:
-        return previous
+    if cache['last_dir'] == name:
+        return cache['last_image']
+
+    cache['last_dir'] = name
+    cache['last_image'] = None
 
     try:
         files = os.listdir(name)
     except:
         logging.exception("Failed to list %s", name)
-        return name, None
+        return cache['default']
 
     for cover in files:
         if r_cover.search(cover):
             logging.debug("Album art: %s/%s", name, cover)
-            return name, load_image(os.path.join(name, cover), scale_icons)
+            cache['last_image'] = load_image(os.path.join(name, cover),
+                                             scale)
+            break
 
-    return name, None
+    return cache['last_image'] or cache['default']
 
 
 def mpd_hiss(client, args):
@@ -73,7 +95,12 @@ def mpd_hiss(client, args):
             raise AuthError(e)
 
     last_status = client.status()
-    last_art = (None, None)
+
+    icon_cache = {
+        'last_dir': None,
+        'last_image': None,
+        'default': growl_icon,
+    }
 
     while True:
         client.send_idle("player")
@@ -88,13 +115,9 @@ def mpd_hiss(client, args):
 
         if started_playing or track_changed:
             song = client.currentsong()
-
-            if args.album_art:
-                filename = os.path.join(args.album_art, song.get("file"))
-                last_art = album_art(last_art, filename, args.scale_icons)
-                icon = last_art[1] or growl_icon
-            else:
-                icon = growl_icon
+            icon = album_art(icon_cache, get_album_dir(song.get("file"),
+                                                       args.album_art),
+                             args.scale_icons)
 
             song_data = {
                 "artist": song.get("artist", "Unknown artist"),
