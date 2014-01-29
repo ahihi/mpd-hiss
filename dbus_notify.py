@@ -27,12 +27,12 @@ def notify(title, description, icon):
     actions = ""
     hint = {"suppress-sound": True, "urgency": 0}
     time = 5000
+    icon_file = ""
 
     if is_string(icon):
         # File path
         icon_file = icon
-    else:
-        icon_file = ""
+    elif icon:
         # Not all notifiers support this
         # Some require "icon" and an image on disk
         hint["icon_data"] = dbus_raw_image(icon)
