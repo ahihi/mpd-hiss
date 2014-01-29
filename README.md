@@ -9,7 +9,7 @@ General:
 - [MPD](http://mpd.wikia.com/)
 - [Python](http://python.org/) (tested on 2.6, 2.7, and 3.3)
 - Python 2.6 users will also need to install [argparse](http://code.google.com/p/argparse/), which is part of the standard library since 2.7.
-- [python-mpd](http://pypi.python.org/pypi/python-mpd/)
+- [python-mpd2](http://pypi.python.org/pypi/python-mpd2/)
 - Optional: [Pillow](https://github.com/python-imaging/Pillow) or PIL for album art and icon scaling support
 
 On Mac OS X:
