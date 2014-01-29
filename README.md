@@ -1,7 +1,7 @@
 # mpd-hiss
 
 Growl notifier for MPD (Music Player Daemon) written in Python.
-Also supports DBUS based notifiers.
+Also supports D-Bus based notifiers.
 
 ## Requirements
 

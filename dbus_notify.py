@@ -11,7 +11,7 @@ APP_NAME = "mpd-hiss"
 
 
 def dbus_raw_image(im):
-    """Convert image for DBUS"""
+    """Convert image for D-Bus"""
     raw = im.tobytes("raw", "RGBA")
     alpha, bps, channels = 0, 8, 4
     stride = channels * im.size[0]
