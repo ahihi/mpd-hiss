@@ -14,11 +14,11 @@ def growl_raw_image(image):
     return b.getvalue()
 
 
-def load_image_gntp(image):
+def load_image_legacy(image):
     return growl.Image.imageFromPath(image)
 
 
-def load_image_legacy(image):
+def load_image_gntp(image):
     with open(image, "rb") as handle:
         return handle.read()
 
