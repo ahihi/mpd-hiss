@@ -36,7 +36,7 @@ class AuthError(Exception):
     pass
 
 
-r_cover = re.compile(r'(album.?art|cover|front)\.(jpe?g|png)$', re.I)
+r_cover = re.compile(r'(album.?art|folder|cover|front)\.(jpe?g|png)$', re.I)
 
 
 def get_album_dir(filename, mpd_dir):
