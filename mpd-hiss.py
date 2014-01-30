@@ -63,7 +63,7 @@ def album_art(cache, name, scale):
         return cache['last_image']
 
     cache['last_dir'] = name
-    cache['last_image'] = None
+    cache['last_image'] = cache['default']
 
     try:
         files = os.listdir(name)
@@ -78,7 +78,7 @@ def album_art(cache, name, scale):
                                              scale)
             break
 
-    return cache['last_image'] or cache['default']
+    return cache['last_image']
 
 
 def mpd_hiss(client, args):
